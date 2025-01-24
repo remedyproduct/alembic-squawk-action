@@ -7,21 +7,35 @@ from alembic.config import Config
 from alembic.script import ScriptDirectory
 
 # This script:
-# 1. Reads a list of changed Alembic migration files from an environment variable "FILE_NAMES".
-# 2. Uses Alembic’s internal API to load and sort all known migrations.
-# 3. Determines the earliest and latest changed migrations in the topological order.
-# 4. Outputs the Alembic upgrade range in the format "start_revision:end_revision".
+# 1. Reads a list of changed Alembic migration files from the command-line argument `--files`.
+# 2. Optionally reads the Alembic configuration from a user-specified file via `--config` (default "alembic.ini").
+# 3. Uses Alembic’s internal API to load and sort all known migrations in topological order.
+# 4. Determines the earliest and latest changed migrations in that order.
+# 5. Outputs the Alembic upgrade range in the format "start_revision:end_revision".
 #
 # Prerequisites:
-# - Ensure that an alembic.ini file is present and properly configured.
+# - Ensure your chosen alembic.ini (or custom .ini) is present and properly configured.
 # - The changed migration files should be inside the configured "versions" directory.
 #
-# If no changed migrations are found, or no valid range can be computed, outputs nothing.
+# If no changed migrations are found, or no valid range can be computed, the script exits silently (code 0, no output).
 
+parser = argparse.ArgumentParser(
+    description="Determine Alembic upgrade range based on changed migration files."
+)
 
-# Parse arguments from the command line
-parser = argparse.ArgumentParser(description="Determine Alembic upgrade range based on changed migration files.")
-parser.add_argument("-f", "--files", nargs="+", help="List of changed Alembic migration files", required=True)
+parser.add_argument(
+    "-f", "--files",
+    nargs="+",
+    help="List of changed Alembic migration files",
+    required=True
+)
+
+parser.add_argument(
+    "-c", "--config",
+    default="alembic.ini",
+    help="Path to the Alembic config file (default: alembic.ini)."
+)
+
 args = parser.parse_args()
 
 changed_files = [f.strip() for f in args.files if f.strip()]
@@ -31,7 +45,7 @@ if not changed_files:
     sys.exit(0)
 
 # Load Alembic configuration and script directory
-config = Config("alembic.ini")
+config = Config(args.config)
 script = ScriptDirectory.from_config(config)
 
 # Walk through all revisions to get them in topological order (oldest to newest)
