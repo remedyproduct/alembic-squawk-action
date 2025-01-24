@@ -1,0 +1,32 @@
+name: "Alembic Migration Lint with Squawk"
+description: "Leverages Squawk to lint Alembic migrations"
+
+inputs:
+  migrations_path:
+    description: "Path to your Alembic migrations (containing the 'versions' folder)"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Find changed migrations
+      id: modified-migrations
+      uses: dorny/paths-filter@v3.0.2
+      with:
+        list-files: shell
+        filters: |
+          migrations:
+            - '${{ inputs.migrations_path }}/versions/*.py'
+
+    - name: Generate SQL from Alembic
+      id: migrations_check
+      if: ${{ steps.modified-migrations.outputs.migrations_match == 'true' }}
+      uses: ./docker-action.yml
+      with:
+        migrations_files: ${{ steps.modified-migrations.outputs.migrations_files }}
+
+    - name: Squawk Check for New Migrations
+      if: steps.migrations_check.outputs.changed == 'true'
+      uses: sbdchd/squawk-action@v2
+      with:
+        pattern: migrations.sql
