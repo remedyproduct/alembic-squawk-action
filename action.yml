@@ -1,0 +1,65 @@
+name: "Alembic Migration Lint with Squawk"
+description: "Leverages Squawk to lint Alembic migrations"
+
+inputs:
+  migrations_path:
+    description: "Path to the folder containing your 'versions' subfolder."
+    required: true
+  alembic_config:
+    description: "Path to alembic.ini."
+    required: false
+    default: "alembic.ini"
+  runner:
+    description: >
+      Command prefix for running Python commands.
+      Use "poetry" for Poetry, "pipenv" for Pipenv, "uv" for uv,
+      or leave empty (or set to "none") to use the system interpreter.
+    required: false
+    default: "poetry"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Find changed migrations
+      id: modified-migrations
+      uses: dorny/paths-filter@v3.0.2
+      with:
+        list-files: shell
+        filters: |
+          migrations:
+            - '${{ inputs.migrations_path }}/versions/*.py'
+
+    - name: Generate migration SQL
+      id: generate-sql
+      if: ${{ steps.modified-migrations.outputs.migrations == 'true' }}
+      shell: bash
+      run: |
+        # Determine the command prefix based on the runner input.
+        if [ -z "${{ inputs.runner }}" ] || [ "${{ inputs.runner }}" = "none" ]; then
+          CMD="python"
+          ALEMBIC_CMD="alembic"
+        else
+          # For tools like pipenv or uv, users might already include "run" in the command.
+          # Here we assume the common case of "poetry", so we add "run".
+          CMD="${{ inputs.runner }} run python"
+          ALEMBIC_CMD="${{ inputs.runner }} run alembic"
+        fi
+
+        echo "Using command prefix: $CMD"
+        echo "Detected changed migrations: ${{ steps.modified-migrations.outputs.migrations_files }}"
+
+        ALEMBIC_RANGE=$($CMD ${{ github.action_path }}/scripts/range_from_files.py \
+          --config "${{ inputs.alembic_config }}" \
+          --files "${{ steps.modified-migrations.outputs.migrations_files }}")
+        echo "Alembic range: $ALEMBIC_RANGE"
+
+        $ALEMBIC_CMD -c "${{ inputs.alembic_config }}" upgrade "$ALEMBIC_RANGE" --sql > migrations.sql
+
+        # Set output for changed migrations.
+        echo "changed=true" >> $GITHUB_OUTPUT
+
+    - name: Squawk Check for New Migrations
+      if: ${{ steps.generate-sql.outputs.changed == 'true' }}
+      uses: sbdchd/squawk-action@v2
+      with:
+        pattern: migrations.sql
