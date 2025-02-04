@@ -29,15 +29,14 @@ runs:
       run: |
         echo "Detected changed migrations: ${{ steps.modified-migrations.outputs.migrations_files }}"
         
-        ALEMBIC_RANGE=$(python ${{ github.action_path }}/scripts/range_from_files.py \
+        ALEMBIC_RANGE=$(poetry run python ${{ github.action_path }}/scripts/range_from_files.py \
           --config "${{ inputs.alembic_config }}" \
           --files "${{ steps.modified-migrations.outputs.migrations_files }}"
         )
         
         echo "Alembic range: $ALEMBIC_RANGE"
         
-        # Now call Alembic itself. We assume Alembic is installed in the environment.
-        alembic -c "${{ inputs.alembic_config }}" upgrade "$ALEMBIC_RANGE" --sql > migrations.sql
+        poetry run alembic -c "${{ inputs.alembic_config }}" upgrade "$ALEMBIC_RANGE" --sql > migrations.sql
         
         # Set output for changed migrations
         echo "changed=true" >> $GITHUB_OUTPUT
