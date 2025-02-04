@@ -24,7 +24,7 @@ runs:
 
     - name: Generate migration SQL
       id: generate-sql
-      if: ${{ steps.modified-migrations.outputs.migrations_match == 'true' }}
+      if: ${{ steps.modified-migrations.outputs.migrations == 'true' }}
       shell: bash
       run: |
         echo "Detected changed migrations: ${{ steps.modified-migrations.outputs.migrations_files }}"
