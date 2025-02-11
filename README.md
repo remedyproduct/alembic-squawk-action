@@ -1,6 +1,8 @@
 # Alembic Migration Lint with Squawk
+Lint Alembic Postgres migrations and report violations as a comment in a GitHub Pull Request.
 
-This GitHub Action leverages Squawk to lint Alembic migrations. It identifies changed migration files, generates the corresponding SQL, and runs Squawk to check for any issues.
+- It identifies changed migration files, generates the corresponding SQL, and runs [Squawk](https://github.com/sbdchd/squawk) to check for any issues.
+- Based on [squawk-action](https://github.com/sbdchd/squawk-action)
 
 ## Inputs
 
