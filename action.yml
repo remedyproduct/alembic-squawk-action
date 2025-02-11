@@ -1,5 +1,8 @@
 name: "Alembic Migration Lint with Squawk"
 description: "Leverages Squawk to lint Alembic migrations"
+branding:
+  icon: "check-square"
+  color: "blue"
 
 inputs:
   migrations_path:
