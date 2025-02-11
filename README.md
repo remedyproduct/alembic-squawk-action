@@ -20,9 +20,13 @@ Here is an example of how to use this action in a GitHub workflow:
 name: Lint Alembic Migrations
 
 on:
-  push:
-    paths:
-      - 'migrations/versions/*.py'
+  pull_request:
+    types: [ opened, synchronize, reopened, ready_for_review ]
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write 
 
 jobs:
   lint:
@@ -31,19 +35,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set up Python
-        uses: actions/setup-python@v2
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version-file: 'pyproject.toml'
+          cache: 'poetry'
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install poetry
-          poetry install
+        run: poetry install
 
       - name: Lint Alembic Migrations
-        uses: remedyproduct/alembic-squawk-action@v1
+        uses: remedyproduct/alembic-squawk-action@v0.0.1
         with:
           migrations_path: 'migrations'
           alembic_config: 'alembic.ini'
