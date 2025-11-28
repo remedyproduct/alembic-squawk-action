@@ -14,9 +14,7 @@ Lint Alembic Postgres migrations and report violations as a comment in a GitHub 
 
 - `changed`: Indicates whether any new migrations were found and processed.
 
-## Usage Example
-
-Here is an example of how to use this action in a GitHub workflow:
+## Usage Example (uv)
 
 ```yaml
 name: Lint Alembic Migrations
@@ -28,28 +26,33 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write 
+  pull-requests: write
+
+env:
+  UV_PYTHON: "3.13"
 
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v6
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Set up Python and uv
+        uses: astral-sh/setup-uv@v7
         with:
-          python-version-file: 'pyproject.toml'
-          cache: 'poetry'
+          python-version: '3.13'
+          enable-cache: true
 
       - name: Install dependencies
-        run: poetry install
+        run: uv sync
 
       - name: Lint Alembic Migrations
-        uses: remedyproduct/alembic-squawk-action@v0.0.1
+        uses: remedyproduct/alembic-squawk-action@v0.0.3
         with:
           migrations_path: 'migrations'
           alembic_config: 'alembic.ini'
-          runner: 'poetry'
+          runner: 'uv'
 ```
+
+If you prefer Poetry or Pipenv, set `runner` to `poetry` or `pipenv` instead. Leaving `runner` empty uses the system interpreter.
