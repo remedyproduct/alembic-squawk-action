@@ -37,15 +37,19 @@ runs:
       if: ${{ steps.modified-migrations.outputs.migrations == 'true' }}
       shell: bash
       run: |
-        # Determine the command prefix based on the runner input.
-        if [ -z "${{ inputs.runner }}" ] || [ "${{ inputs.runner }}" = "none" ]; then
+        runner="${{ inputs.runner }}"
+        if [ -z "$runner" ] || [ "$runner" = "none" ]; then
           CMD="python"
           ALEMBIC_CMD="alembic"
+        elif [ "$runner" = "uv" ]; then
+          CMD="uv run python"
+          ALEMBIC_CMD="uv run alembic"
+        elif [ "$runner" = "poetry" ] || [ "$runner" = "pipenv" ] || [ "$runner" = "pdm" ]; then
+          CMD="$runner run python"
+          ALEMBIC_CMD="$runner run alembic"
         else
-          # For tools like pipenv or uv, users might already include "run" in the command.
-          # Here we assume the common case of "poetry", so we add "run".
-          CMD="${{ inputs.runner }} run python"
-          ALEMBIC_CMD="${{ inputs.runner }} run alembic"
+          CMD="$runner python"
+          ALEMBIC_CMD="$runner alembic"
         fi
 
         echo "Using command prefix: $CMD"
