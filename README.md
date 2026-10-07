@@ -8,7 +8,7 @@ Lint Alembic Postgres migrations and report violations as a comment in a GitHub 
 
 - `migrations_path`: Path to the folder containing your 'versions' subfolder. (required)
 - `alembic_config`: Path to alembic.ini. (optional, default: "alembic.ini")
-- `runner`: Command prefix for running Python commands. Use "poetry" for Poetry, "pipenv" for Pipenv, "uv" for uv, or leave empty (or set to "none") to use the system interpreter. (optional, default: "poetry")
+- `runner`: Command prefix for running Python commands. Use "poetry" for Poetry, "pipenv" for Pipenv, "pdm" for PDM, "uv" for uv, or leave empty (or set to "none") to use the system interpreter. (optional, default: "poetry")
 
 ## Outputs
 

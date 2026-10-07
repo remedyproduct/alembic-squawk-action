@@ -15,10 +15,15 @@ inputs:
   runner:
     description: >
       Command prefix for running Python commands.
-      Use "poetry" for Poetry, "pipenv" for Pipenv, "uv" for uv,
+      Use "poetry" for Poetry, "pipenv" for Pipenv, "pdm" for PDM, "uv" for uv,
       or leave empty (or set to "none") to use the system interpreter.
     required: false
     default: "poetry"
+
+outputs:
+  changed:
+    description: "Indicates whether any new migrations were found and processed."
+    value: ${{ steps.generate-sql.outputs.changed }}
 
 runs:
   using: "composite"
@@ -34,10 +39,15 @@ runs:
 
     - name: Generate migration SQL
       id: generate-sql
-      if: ${{ steps.modified-migrations.outputs.migrations == 'true' }}
       shell: bash
       run: |
         runner="${{ inputs.runner }}"
+        if [ "${{ steps.modified-migrations.outputs.migrations }}" != "true" ]; then
+          echo "No new migrations found."
+          echo "changed=false" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
         if [ -z "$runner" ] || [ "$runner" = "none" ]; then
           CMD="python"
           ALEMBIC_CMD="alembic"
@@ -57,7 +67,7 @@ runs:
 
         ALEMBIC_RANGE=$($CMD ${{ github.action_path }}/scripts/range_from_files.py \
           --config "${{ inputs.alembic_config }}" \
-          --files "${{ steps.modified-migrations.outputs.migrations_files }}")
+          --files ${{ steps.modified-migrations.outputs.migrations_files }})
         echo "Alembic range: $ALEMBIC_RANGE"
 
         $ALEMBIC_CMD -c "${{ inputs.alembic_config }}" upgrade "$ALEMBIC_RANGE" --sql > migrations.sql
